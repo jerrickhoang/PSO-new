@@ -5,6 +5,12 @@ import java.util.Vector;
 import PSO.Particle;
 
 public class PCG implements SwarmTopology {
+	
+	public int numParticles;
+	
+	public PCG(int numParticles) {
+		this.numParticles = numParticles;
+	}
 
 	@Override
 	public boolean isNeighbor(Particle p1, Particle p2) {
