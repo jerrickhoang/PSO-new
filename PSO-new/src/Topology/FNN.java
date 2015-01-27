@@ -69,6 +69,10 @@ public class FNN implements SwarmTopology {
 		}
 		return true;
 	}
+	
+	public void reset() {
+		randomPopulate(this.numRows, this.numCols);
+	}
 
 	@Override
 	public boolean isNeighbor(Particle p1, Particle p2) {
