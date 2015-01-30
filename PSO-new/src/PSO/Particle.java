@@ -19,6 +19,7 @@ public class Particle {
 	
 	public Particle(Function function, int particleID) {
 		this.particleID = particleID;
+		if (function == null) return;
 
 		// Position and Velocity.
 		// don't let the initial speed be greater than a small amount
