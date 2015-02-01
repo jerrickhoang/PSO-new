@@ -41,8 +41,11 @@ public class Main {
             //testFunctions.add(new Sphere(dimension));
             for (Function f: testFunctions) {
             	for (Integer particle: numParticles) {
-            		testResults.add(
-            				runExperiment(f, dimension, particle,numRuns, numIterations));
+            		//for (Swarm.UPDATE_RULE r : Swarm.UPDATE_RULE.values()) {
+            		Swarm.UPDATE_RULE r = Swarm.UPDATE_RULE.FIPS;
+            			testResults.add(
+            				runExperiment(f, dimension, particle, numRuns, numIterations, r));
+            		//}
             	}
             }
 		}
@@ -150,18 +153,18 @@ public class Main {
 	}
 	
 	public static TestResult runExperiment(Function f, int dimension, int numParticles,
-			int numRuns, int numIterations) {
-		int[][] alphaSet = {{0,1,2,4,5,6,8,9,11,12,13,16}};
-		int[][] betaSet = {{0}};
-		int[][] epsilonSet = {{1,2,3,4,5,7,8,9,10,11,14,15}};
-		SDCARule alphaRule = new SDCARule(SDCA.RULE.TOTALISTIC, alphaSet);
-		SDCARule betaRule = new SDCARule(SDCA.RULE.TOTALISTIC, betaSet);
-		SDCARule epsilonRule = new SDCARule(SDCA.RULE.TOTALISTIC, epsilonSet);
+			int numRuns, int numIterations, Swarm.UPDATE_RULE r) {
+//		int[][] alphaSet = {{0,1,2,4,5,6,8,9,11,12,13,16}};
+//		int[][] betaSet = {{0}};
+//		int[][] epsilonSet = {{1,2,3,4,5,7,8,9,10,11,14,15}};
+//		SDCARule alphaRule = new SDCARule(SDCA.RULE.TOTALISTIC, alphaSet);
+//		SDCARule betaRule = new SDCARule(SDCA.RULE.TOTALISTIC, betaSet);
+//		SDCARule epsilonRule = new SDCARule(SDCA.RULE.TOTALISTIC, epsilonSet);
 		TestResult result = new TestResult(numRuns, numIterations, numParticles, f.name);
         for (int run = 0; run < numRuns; run ++) {
-        	SDCA topo = new SDCA(numParticles, alphaRule, betaRule, epsilonRule);
-        	// GlobalTopology topo = new GlobalTopology(numParticles);
-            Swarm s = new Swarm(f, numParticles, topo);
+        	// SDCA topo = new SDCA(numParticles, alphaRule, betaRule, epsilonRule);
+        	GlobalTopology topo = new GlobalTopology(numParticles);
+            Swarm s = new Swarm(f, numParticles, topo, r);
             for (int iter = 0; iter < numIterations; iter++) {
 				s.update(iter);
 			}

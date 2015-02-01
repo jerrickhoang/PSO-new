@@ -7,6 +7,10 @@ import Topology.SwarmTopology;
 
 
 public class Swarm {
+	
+	enum UPDATE_RULE {
+		FIPS, NEIGH_BEST
+	}
 
 	//Equation constants.
 	public static final double PERSONAL_THETA = 2.05;
@@ -19,10 +23,12 @@ public class Swarm {
 	public Solution globalBest;
 	public SwarmTopology PSOTopology;
 	public Function function;
+	public Swarm.UPDATE_RULE rule;
 
-	public Swarm(Function function, int swarmSize, SwarmTopology PSOTopology) {
+	public Swarm(Function function, int swarmSize, SwarmTopology PSOTopology, Swarm.UPDATE_RULE rule) {
 		this.PSOTopology = PSOTopology;
 		this.function = function;
+		this.rule = rule;
 		this.initializeParticles(swarmSize);
 		globalBest = new Solution();
 	}
@@ -45,19 +51,36 @@ public class Swarm {
 		}
 	}
 	
-	public void updatePositionAndVelocity(Particle p) {
+	public DoubleVector getAcceleration(Particle p) {
 		DoubleVector acceleration = new DoubleVector(p.position.size(), 0.0);
+		if (this.rule == Swarm.UPDATE_RULE.NEIGH_BEST) {
+			// neighborhood best component.
+			DoubleVector neighborhoodComponent = getVectorToNeighBestPositionFor(p);
+			neighborhoodComponent.multRandomScalar(0.0, Swarm.NEIGHBORHOOD_THETA);
+			acceleration.addVector(neighborhoodComponent);
 
-		// neighborhood best component.
-		DoubleVector neighborhoodComponent = getVectorToNeighBestPositionFor(p);
-		neighborhoodComponent.multRandomScalar(0.0, Swarm.NEIGHBORHOOD_THETA);
-		acceleration.addVector(neighborhoodComponent);
-
-		// personal component.
-		DoubleVector personalComponent = DoubleVector.sub(p.personalBest.position, p.position);
-		personalComponent.multRandomScalar(0.0, Swarm.PERSONAL_THETA);
-		acceleration.addVector(personalComponent);
+			// personal component.
+			DoubleVector personalComponent = DoubleVector.sub(p.personalBest.position, p.position);
+			personalComponent.multRandomScalar(0.0, Swarm.PERSONAL_THETA);
+			acceleration.addVector(personalComponent);
+		} else if (this.rule == Swarm.UPDATE_RULE.FIPS) {
+			DoubleVector curPosition = p.position;
+			Vector<Integer> neighList = PSOTopology.getNeighborsFor(p);
+			double componentTheta = THETA/neighList.size();
+			for (Integer id: neighList) {
+				Particle nextParticle = particles[id];
+				DoubleVector vectorToNextPBest = DoubleVector.sub(nextParticle.personalBest.position, curPosition);
+				vectorToNextPBest.multRandomScalar(0.0, componentTheta);
+				acceleration.addVector(vectorToNextPBest);	
+			}
+		}
 		
+		return acceleration;
+	}
+	
+	public void updatePositionAndVelocity(Particle p) {
+		DoubleVector acceleration = getAcceleration(p);
+
 		// update the velocity and apply the constriction factor.
 		p.velocity.addVector(acceleration);
 		p.velocity.multScalar(Swarm.CONSTRICTION_FACTOR);
