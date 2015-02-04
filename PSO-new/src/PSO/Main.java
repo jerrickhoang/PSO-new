@@ -12,10 +12,14 @@ import java.util.Vector;
 
 import TestFunctions.Ackley;
 import TestFunctions.Function;
+import TestFunctions.Griewank;
+import TestFunctions.Penalized1;
+import TestFunctions.Penalized2;
 import TestFunctions.Rastrigin;
 import TestFunctions.Rosenbrock;
+import TestFunctions.Sphere;
 import TestFunctions.TestResult;
-import Topology.GlobalTopology;
+import Topology.PCG;
 import Topology.SDCA;
 import Topology.SDCARule;
 
@@ -24,7 +28,8 @@ public class Main {
 		int[] dimensions = {30};
 		int numRuns = 50;
 		int numIterations = 10000;
-		int[] numParticles = {49};
+		int[] numParticles = {28};
+		int[] numWays = {4, 7, 10, 14};
 		Vector<TestResult> testResults = new Vector<TestResult>();
 		
 		//classifySDCA(numIterations, numParticles[0]);
@@ -32,20 +37,21 @@ public class Main {
 		
 		for (Integer dimension: dimensions) {
 			Vector<Function> testFunctions = new Vector<Function>();
-            //testFunctions.add(new Ackley(dimension));
-            //testFunctions.add(new Griewank(dimension));
-            //testFunctions.add(new Penalized1(dimension));
-            //testFunctions.add(new Penalized2(dimension));
+            testFunctions.add(new Ackley(dimension));
+            testFunctions.add(new Griewank(dimension));
+            testFunctions.add(new Penalized1(dimension));
+            testFunctions.add(new Penalized2(dimension));
             testFunctions.add(new Rastrigin(dimension));
             testFunctions.add(new Rosenbrock(dimension));
-            //testFunctions.add(new Sphere(dimension));
+            testFunctions.add(new Sphere(dimension));
             for (Function f: testFunctions) {
             	for (Integer particle: numParticles) {
-            		//for (Swarm.UPDATE_RULE r : Swarm.UPDATE_RULE.values()) {
-            		Swarm.UPDATE_RULE r = Swarm.UPDATE_RULE.FIPS;
-            			testResults.add(
-            				runExperiment(f, dimension, particle, numRuns, numIterations, r));
-            		//}
+            		for (Swarm.UPDATE_RULE r : Swarm.UPDATE_RULE.values()) {
+            			for (Integer w : numWays) {
+            				testResults.add(
+            						runExperiment(f, dimension, particle, numRuns, numIterations, r, w));
+            			}
+            		}
             	}
             }
 		}
@@ -153,17 +159,19 @@ public class Main {
 	}
 	
 	public static TestResult runExperiment(Function f, int dimension, int numParticles,
-			int numRuns, int numIterations, Swarm.UPDATE_RULE r) {
+			int numRuns, int numIterations, Swarm.UPDATE_RULE r, int w) {
 //		int[][] alphaSet = {{0,1,2,4,5,6,8,9,11,12,13,16}};
 //		int[][] betaSet = {{0}};
 //		int[][] epsilonSet = {{1,2,3,4,5,7,8,9,10,11,14,15}};
 //		SDCARule alphaRule = new SDCARule(SDCA.RULE.TOTALISTIC, alphaSet);
 //		SDCARule betaRule = new SDCARule(SDCA.RULE.TOTALISTIC, betaSet);
 //		SDCARule epsilonRule = new SDCARule(SDCA.RULE.TOTALISTIC, epsilonSet);
-		TestResult result = new TestResult(numRuns, numIterations, numParticles, f.name);
+		TestResult result = new TestResult(numRuns, numIterations, numParticles, f.name, w, "PCG");
         for (int run = 0; run < numRuns; run ++) {
         	// SDCA topo = new SDCA(numParticles, alphaRule, betaRule, epsilonRule);
-        	GlobalTopology topo = new GlobalTopology(numParticles);
+        	// GlobalTopology topo = new GlobalTopology(numParticles);
+        	//FNN topo = new FNN(numParticles, 7, FNN.NeighborhoodType.MOORE);
+        	PCG topo = new PCG(numParticles, w);
             Swarm s = new Swarm(f, numParticles, topo, r);
             for (int iter = 0; iter < numIterations; iter++) {
 				s.update(iter);
@@ -225,10 +233,10 @@ public class Main {
 	
 	public static void writeToFileSingleResult(PrintWriter writer, TestResult t) {
 		writer.println("====================================================");
-		writer.println("USING SDCA TOPOLOGY");
+		writer.printf("USING %s TOPOLOGY\n", t.topoName);
 		writer.printf("FUNCTION %s \n", t.functionName.name());
-		writer.printf("AVERAGE OVER %s RUNS, EACH USING %s ITERATIONS\n", 
-				t.numRuns, t.numIterations);
+		writer.printf("AVERAGE OVER %s RUNS, EACH USING %s ITERATIONS, %s Particles, %s PCG num ways\n", 
+				t.numRuns, t.numIterations, t.numParticles, t.numWays);
 		for (int i = 0; i < t.numRuns; i ++) {
 			writer.printf("RUN #%s: MIN FOUND = %s \n", i, t.runResults[i]);
 		}

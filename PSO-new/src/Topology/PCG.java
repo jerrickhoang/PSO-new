@@ -20,16 +20,20 @@ public class PCG implements SwarmTopology {
 	public PCG(int numParticles, int numWays) {
 		this.numParticles = numParticles;
 		this.numWays = numWays;
-		graph = new int[numWays][numParticles/numWays + 1];
-		this.numCols = numParticles/numWays + 1;
+		if (numParticles % numWays == 0) {
+			this.numCols = numParticles/numWays;
+		} else {
+			this.numCols = numParticles/numWays + 1;
+		}
+		graph = new int[numWays][numCols];
 		this.numRows = numWays; 
 		initGraph();
 	}
 	
 	public void initGraph() {
 		int counter = 0;
-		for (int i = 0; i < numWays; i ++) {
-			for (int j = 0; j < numParticles/numWays + 1; j ++) {
+		for (int i = 0; i < numRows; i ++) {
+			for (int j = 0; j < numCols; j ++) {
 				graph[i][j] = counter;
 				counter ++;
 			}
@@ -47,7 +51,6 @@ public class PCG implements SwarmTopology {
 
 	@Override
 	public void update(int iteration) {
-		// TODO Auto-generated method stub
 		return;
 	}
 
@@ -56,15 +59,20 @@ public class PCG implements SwarmTopology {
 		Vector<Integer> res = new Vector<Integer>();
 		if (p.particleID % this.numCols == 0) {
 			// If this particle is the first particle in a row.
-			for (int i = 0; i < numRows; i ++) {
-				if (graph[i][0] != p.particleID) res.add(graph[i][0]);
-			}
+//			for (int i = 0; i < numRows; i ++) {
+//				if (graph[i][0] != p.particleID) res.add(graph[i][0]);
+//			}
+			int rowIndex = p.particleID / numCols;
+			res.add(graph[(rowIndex-1+numRows)%numRows][0]);
+			res.add(graph[(rowIndex+1)%numRows][0]);
 		}
-		int row = (p.particleID / numRows);
+		int row = (p.particleID / numCols);
 		for (int i = 0; i < numCols; i ++) {
 			// INCLUDE SELF
 			if (row == numRows - 1) {
-				if (i < (numParticles % numWays)) res.add(graph[row][i]);
+				int t = numParticles % numCols;
+				int s = t == 0? 7 : t;
+				if (i < s) res.add(graph[row][i]);
 			} else {
 				res.add(graph[row][i]);
 			}
@@ -83,9 +91,9 @@ public class PCG implements SwarmTopology {
 	}
 	
 	public static void main(String[] args) {
-		PCG p = new PCG(7, 3);
+		PCG p = new PCG(28, 10);
 		p.printGraph();
-		Vector<Integer> ns = p.getNeighborsFor(new Particle(null, 4));
+		Vector<Integer> ns = p.getNeighborsFor(new Particle(null, 24));
 		for (Integer n : ns) System.out.println(n);
 	}
 }

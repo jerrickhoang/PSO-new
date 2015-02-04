@@ -11,7 +11,7 @@ public class FNN implements SwarmTopology {
 		MOORE, VON_NEUMANN
 	}
 
-	public Neuron[][] grid;
+	public int[][] grid;
 	public int numRows, numCols;
 	public int numParticles;
 	public Neuron[] neuronList;
@@ -26,7 +26,12 @@ public class FNN implements SwarmTopology {
 	}
 
 	private void randomPopulate(int numRows, int numCols) {
-		grid = new Neuron[numRows][numCols];
+		grid = new int[numRows][numCols];
+		for (int i = 0; i < numRows; i ++) {
+			for (int j = 0; j < numCols; j++) {
+				grid[i][j] = -1;
+			}
+		}
 		neuronList = new Neuron[numParticles];
 		for (int neuronID = 0 ; neuronID < numParticles; ++neuronID) {
 			Neuron newNeuron = addRandomNeuron(neuronID);
@@ -49,21 +54,21 @@ public class FNN implements SwarmTopology {
 		int r = rand.nextInt(numRows);
 		int c = rand.nextInt(numCols);
 
-		while (grid[r][c] != null) {
+		while (grid[r][c] != -1) {
 			r = rand.nextInt(numRows);
 			c = rand.nextInt(numCols);
 		}
 
-		grid[r][c] = new Neuron(neuronID, r, c);
+		grid[r][c] = neuronID;
+		return new Neuron(neuronID, r, c);
 
-		return grid[r][c];
 
 	}
 
 	private boolean gridFull() {
 		for (int r = 0 ; r < grid.length ; ++r) {
 			for (int c = 0 ; c < grid[r].length ; ++c) {
-				if (grid[r][c] == null)
+				if (grid[r][c] == -1)
 					return false;
 			}
 		}
@@ -85,7 +90,7 @@ public class FNN implements SwarmTopology {
 
 	@Override
 	public void update(int iteration) {
-		return;
+		if (iteration % 500 == 0) reset();
 	}
 
 	@Override
@@ -97,28 +102,32 @@ public class FNN implements SwarmTopology {
 				for (int j = -1; j < 2; j ++) {
 					int r = current.r + i;
 					int c = current.c + j;
-					if ((i!= 0 || j != 0) && grid[r][c] != null) {
-						res.add(grid[r][c].id);
+					if ((i!= 0 || j != 0) && validCell(r, c)) {
+						res.add(grid[r][c]);
 					}
 				}
 			}
 		} else if (this.neighborhoodType == FNN.NeighborhoodType.VON_NEUMANN) {
 			int r = current.r + 1;
 			int c = current.c;
-			if (grid[r][c] != null) res.add(grid[r][c].id);
+			if (validCell(r, c)) res.add(grid[r][c]);
 			
 			r = current.r - 1;
 			c = current.c;
-			if (grid[r][c] != null) res.add(grid[r][c].id);
+			if (validCell(r, c)) res.add(grid[r][c]);
 
 			r = current.r;
 			c = current.c + 1;
-			if (grid[r][c] != null) res.add(grid[r][c].id);
+			if (validCell(r, c)) res.add(grid[r][c]);
 			
 			r = current.r;
 			c = current.c - 1;
-			if (grid[r][c] != null) res.add(grid[r][c].id);
+			if (validCell(r, c)) res.add(grid[r][c]);
 		}
 		return res;
+	}
+	
+	public boolean validCell(int r, int c) {
+		return (r >= 0 && r < numRows && c >= 0 && c < numCols) && (grid[r][c] != -1);
 	}
 }
